@@ -1,32 +1,27 @@
-'''
-THIS IS A WEBSOCKETS SERVER FOR TESTING WEBSOCKET CLIENTS
-'''
-
 from flask import Flask
-from flask_socketio import SocketIO, send, emit
+from flask_sockets import Sockets
 
-APP = Flask(__name__)
-APP.config['SECRET_KEY'] = 'supersecret'
-SOCKETIO = SocketIO(APP)
-
-
-@SOCKETIO.on('action')
-def handle_result_action(json):
-    print('received json: ' + str(json))
+app = Flask(__name__)
+sockets = Sockets(app)
 
 
-@SOCKETIO.on('connect')
-def test_connect():
-    emit('message', {'data': "Hi, I'm server"})
-    emit('action', {'data': "pls turn xx switch to yy position"})
-    print('Client connected')
+@sockets.route('/')
+def echo_socket(ws):
+    while not ws.closed:
+        message = ws.receive()
+        ws.send("Hello, I am server")
+        print(f"received {message}")
+        # ws.send()
 
 
-@SOCKETIO.on('disconnect', namespace='/chat')
-def test_disconnect():
-    print('Client disconnected')
+@app.route('/')
+def hello():
+    return 'Lumos Hub Interface'
 
 
-if __name__ == '__main__':
-    # default port is 5000
-    SOCKETIO.run(APP, debug=True)
+if __name__ == "__main__":
+    from gevent import pywsgi
+    from geventwebsocket.handler import WebSocketHandler
+    print('serving on 5000')
+    server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
+    server.serve_forever()
