@@ -1,10 +1,22 @@
 import websocket
 import time
+import json
 import _thread as thread
+from device import Device
 
 
 def on_message(ws, message):
-    print(f"received: message")
+    try:
+        json_object = json.loads(message)
+    except ValueError:
+        print(f"received: message")
+        return
+    if "action" in json_object:
+        action_result = Device.handle_action(message)
+        ws.send(json.dumps(action_result))
+    else:
+        # some other thing = unexpected!
+        print(json_object)
 
 
 def on_error(ws, error):
